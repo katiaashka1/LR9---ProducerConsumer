@@ -39,7 +39,7 @@ struct HrefData {
 
 class Crawler {
 public:
-    explicit Crawler(std::string beginPage = "https://yandex.ru",   // конструктор задает введенные пользователем параметры, либо параметры по умолчанию
+    explicit Crawler(std::string beginPage = "https://yandex.ru",
                      uint64_t maxDepth = 1,
                      uint8_t producerThreadsCount = 10,
                      uint8_t consumerThreadsCount = 10,
@@ -52,34 +52,34 @@ public:
 
     void handler() {
         HrefData fatherOfAll{startingPoint, 0};
-        hrefQueue.push(fatherOfAll);    //добавление в очередь типа HrefData (ссылка и уровень)
-        imgQueue.push(startingPoint);   //добавление в очередь типа string
+        hrefQueue.push(fatherOfAll);
+        imgQueue.push(startingPoint);
         boost::thread_group hrefFabric;
         boost::thread_group imgFabric;
         for (uint8_t i = 0; i < networkThreadsCount; ++i)
             hrefFabric.create_thread(boost::bind(&Crawler::
-            hrefWorker, this, i));  // создание i-го потока для СКАЧИВАНИЯ СТРАНИЦЫ
+            hrefWorker, this, i));
 
-        hrefFabric.join_all();  // включение потоков для скачивания
+        hrefFabric.join_all();
         for (uint8_t i = 0; i < parserThreadsCount; ++i)
-            imgFabric.create_thread(boost::bind(&Crawler::imgWorker, this)); // создание i-го потока для ПРОЦЕССИНГА СТРАНИЦЫ
-        imgFabric.join_all();   // включение потоков для процессинга
+            imgFabric.create_thread(boost::bind(&Crawler::imgWorker, this));
+        imgFabric.join_all();
     }
 
     void hrefWorker(uint16_t id) {
-        while (true) {  // бесконечный цикл
+        while (true) {
             try {
-                hrefMuter.lock();   // блокируем текущий поток (только "я" сейчас могу его использовать)
-                if (!hrefQueue.empty()) {   // если очередь пустая
-                    HrefData href = hrefQueue.front();  // обращение к первому элементу очереди
-                    hrefQueue.pop();    // удалить первый элемент
-                    hrefMuter.unlock(); //  освобождаем поток
-                    if (href.link.empty()) continue;    // если ссылки нет, то на на 87 строку??
+                hrefMuter.lock();
+                if (!hrefQueue.empty()) {
+                    HrefData href = hrefQueue.front();
+                    hrefQueue.pop();
+                    hrefMuter.unlock();
+                    if (href.link.empty()) continue;
 
-                    std::string page = getPage(href.link);  // в page хранится весь код страницы
+                    std::string page = getPage(href.link);
 
-                    if (page.empty())continue;  // если код станицы пустрой то на 87 строку
-                    getLinks(fromStrToNode(page)->root, href);  // достаем из page все ссылки
+                    if (page.empty())continue;
+                    getLinks(fromStrToNode(page)->root, href);
                     hrefMuter.lock();
                     std::cout << id << ": " << href.link <<
                               " - " << href.rang << std::endl;
@@ -96,7 +96,7 @@ public:
         }
     }
 
-    void imgWorker() {  // работка с ссылками на страницу
+    void imgWorker() {
         while (true) {
             try {
                 imgMuter.lock();
@@ -125,7 +125,7 @@ public:
         return output;
     }
 
-    void getLinks(GumboNode *node, const HrefData &parent) {    // достаем из кода страницы все ссылки
+    void getLinks(GumboNode *node, const HrefData &parent) {
         try {
             if (node->type != GUMBO_NODE_ELEMENT) {
                 return;
@@ -157,7 +157,7 @@ public:
         catch (...) { return; }
     }
 
-    void getImg(GumboNode *node) {  // работа с ссылками на картинки и сохранение этих ссылков файл
+    void getImg(GumboNode *node) {
         try {
             if (node->type != GUMBO_NODE_ELEMENT) {
                 return;
@@ -189,17 +189,17 @@ public:
 
     static std::string getPage(std::string url) {
         std::string page;
-        if (getPort(url) == "80") { // http
+        if (getPort(url) == "80") {
             page = getHttp(url);
-        } else { page = getHttps(url); }    //https
-        return page;    // возврат страницы
+        } else { page = getHttps(url); }
+        return page;
     }
 
     static std::string getHttp(std::string url) {
         try {
-            std::string const host = getHost(url); // получаем хост
+            std::string const host = getHost(url);
             std::string const port = "80"; // https - 443, http - 80
-            std::string const target = getTarget(url);  // получаем строку после хоста
+            std::string const target = getTarget(url);
             int version = 10;
             boost::asio::io_context ioc;
             tcp::resolver resolver{ioc};
@@ -215,7 +215,6 @@ public:
             http::response<http::dynamic_body> res;
             http::read(stream, buffer, res);
             return boost::beast::buffers_to_string(res.body().data());
-            // все что выше-программа скачивает страницу и возвращает эту строку
         }
         catch (...) {
             return "";
@@ -253,18 +252,12 @@ public:
             http::response<http::dynamic_body> res;
             http::read(stream, buffer, res);
             return boost::beast::buffers_to_string(res.body().data());
-            // все что выше-программа скачивает страницу и возвращает эту строку
         } catch (...) {
             return "";
         }
     }
 
-    static std::string getHost(std::string &url) {   // поиск хоста
-        /*
-         пример:
-         входные    url  =   https://support.microsoft.com/ru-ru/help/972034/how-to-reset-the-hosts-file-back-to-the-default
-         получилось host =   support.microsoft.com
-         */
+    static std::string getHost(std::string &url) {
         std::string host;
         int64_t skipHTTP = 0;
         int64_t skipHTTPS = 0;
@@ -281,11 +274,6 @@ public:
     }
 
     static std::string getTarget(std::string &url) {
-        /*
-         пример:
-         входные    url  =   https://support.microsoft.com/ru-ru/help/972034/how-to-reset-the-hosts-file-back-to-the-default
-         получилось host =   /ru-ru/help/972034/how-to-reset-the-hosts-file-back-to-the-default/
-         */
         std::string target;
         int64_t www = url.find("www");
         int64_t skipWWW = 0;
@@ -299,10 +287,10 @@ public:
         return target;
     }
 
-    static std::string getPort(std::string &url) {  // проверка ссылки, какой использовать порт
+    static std::string getPort(std::string &url) {
         int64_t portFlag = url.find("https");
-        if (portFlag != -1) return "443";   //Если ссылка начинается на https (зашифр трафик), то 443 порт
-        return "80";    // Иначе 80 порт, http (незашифр трафик)
+        if (portFlag != -1) return "443";
+        return "80";
     }
 
 public:

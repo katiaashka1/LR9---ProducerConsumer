@@ -3,7 +3,7 @@
 #include <header.hpp>
 
 int main(int argc, char **argv) {
-    if (argc) {             // обработка параметров командной строки
+    if (argc) {
         std::string url = argv[0];
         uint64_t depth = std::stoi(argv[1]);
         uint64_t network_threads = std::stoi(argv[2]);
