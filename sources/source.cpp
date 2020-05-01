@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
     catch (boost::program_options::error &e) {
         std::cout << e.what() << std::endl;
     }
-    
     Crawler s(vm["url"].as<std::string>(),
               vm["depth"].as<unsigned>(),
               vm["network_threads"].as<unsigned>(),
