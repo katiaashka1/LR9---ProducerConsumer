@@ -103,6 +103,7 @@ namespace detail {
     }
 } // namespace detail
 
+
 inline
 void
 load_root_certificates(ssl::context &ctx, boost::system::error_code &ec) {
