@@ -52,11 +52,11 @@ public:
     }
 
     void handler() {
-        HrefData fatherOfAll{startingPoint, 0};
-        hrefQueue.push(fatherOfAll);
-        imgQueue.push(startingPoint);
-        boost::thread_group hrefFabric;
-        boost::thread_group imgFabric;
+        HrefData fatherOfAll{startingPoint, 0};//инициализация link и rang
+        hrefQueue.push(fatherOfAll);//добавление в очередь типа HrefData (ссылка и глубины)
+        imgQueue.push(startingPoint);//добавление в очередь типа string url
+        boost::thread_group hrefFabric;//создание группы потоков для скачивания страниц
+        boost::thread_group imgFabric;// создание группы потоков для обработок ссылок с фото
         for (uint8_t i = 0; i < networkThreadsCount; ++i)
             hrefFabric.create_thread(boost::bind(&Crawler::
             hrefWorker, this, i));
@@ -77,10 +77,10 @@ public:
                     hrefMuter.unlock();
                     if (href.link.empty()) continue;
 
-                    std::string page = getPage(href.link);
+                    std::string page = getPage(href.link); //в page хранится весь код страницы 
 
                     if (page.empty())continue;
-                    getLinks(fromStrToNode(page)->root, href);
+                    getLinks(fromStrToNode(page)->root, href); 
                     hrefMuter.lock();
                     std::cout << id << ": " << href.link <<
                               " - " << href.rang << std::endl;
@@ -121,8 +121,8 @@ public:
         }
     }
 
-    static GumboOutput *fromStrToNode(std::string &str) {
-        GumboOutput *output = gumbo_parse(str.c_str());
+    static GumboOutput *fromStrToNode(std::string &str) { 
+        GumboOutput *output = gumbo_parse(str.c_str()); //парсит HTML страницы на ссылки
         return output;
     }
 
@@ -151,6 +151,8 @@ public:
                 }
             }
             GumboVector *children = &node->v.element.children;
+            
+//Рекурсивный обход всех ссылок на странице           
             for (unsigned int i = 0; i < children->length; ++i) {
                 getLinks(static_cast<GumboNode *>(children->data[i]), parent);
             }
@@ -171,9 +173,8 @@ public:
                 std::string s = img->value;
                 if (s.find("http") == 0) {
                     imgMuter.lock();
-                    std::ofstream out(outputPath, std::ios::app);
+                    std::ofstream out(outputPath, std::ios::app);//создается поток для записи в файл
                     if (out.is_open()) {
-                        // std::cout<<"IMAGE: "<<s<<std::endl;
                         out << "IMAGE: " << s << std::endl;
                     }
                     out.close();
@@ -195,12 +196,12 @@ public:
         } else { page = getHttps(url); }
         return page;
     }
-
+//программа скачивает исходный код странцу и возвращает эту строку 
     static std::string getHttp(std::string url) {
         try {
             std::string const host = getHost(url);
             std::string const port = "80"; // https - 443, http - 80
-            std::string const target = getTarget(url);
+            std::string const target = getTarget(url); // Строка после хоста
             int version = 10;
             boost::asio::io_context ioc;
             tcp::resolver resolver{ioc};
